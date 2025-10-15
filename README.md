@@ -1,47 +1,63 @@
-# Autonomous Design Agents Using Generative AI
+# Multi-Agent Hardware Design System
 
 ## Overview
 
-This project explores the use of Generative AI to accelerate hardware and software design workflows.  
-The primary focus is on creating an autonomous agent capable of generating Register Transfer Level (RTL) designs, guided by iterative simulation feedback.
+This project implements a sophisticated multi-agent system designed to accelerate the digital hardware design lifecycle. The system automates the generation, verification, and integration of hardware description language (HDL) artifacts, transforming high-level specifications into verified designs through a two-phase approach: exhaustive upfront planning followed by mechanical, parallel execution.
 
-The long-term vision is to reduce time-to-market for new products by combining AI-driven code generation with industry-standard design and verification workflows.
+## System Architecture
 
-## Goals
+The system is built on the principle that **exhaustive upfront planning enables mechanical, parallel execution**. It consists of four primary components:
 
-- Develop an autonomous self-working agent for RTL design.
-- Build a system that:
-  - Accepts a set of design requirements.
-  - Generates candidate RTL code through AI models.
-  - Refines solutions iteratively based on Electronic Design Automation (EDA) tool simulation results.
-- Ensure cost-effectiveness by exploring hybrid setups:
-  - Small local LLMs.
-  - Third-party hosted LLMs.
+- **Orchestrator**: Central "brain" that maintains the design graph state and determines task readiness
+- **Task Broker**: Message bus with queuing system and dead letter handling for fault tolerance
+- **Worker Pools**: Specialized agents (Implementation, Testbench, Debug, Integration) and deterministic processes
+- **Data Stores**: Design context and task memory for state management
 
-**Stretch Goal:** Expand to additional languages (e.g., C, C++) with automatic compiler selection.
+## Two-Phase Workflow
 
-## Deliverables
+### Phase 1: Planning & Decomposition
 
-- Specifications of AI models used.
-- Prompting methodology for code generation, testing, and refinement.
-- Approach to extracting key simulation results and feeding them back into the AI loop.
-- Benchmarks for evaluation and quantitative results.
-- Production-ready application (GUI or console) that:
-  - Accepts input benchmarks.
-  - Generates working RTL output.
-  - Captures and displays the full iterative AI dialogue.
+- Human-designer collaboration with Planner agent
+- Specification convergence (L1-L5 levels)
+- DAG construction and interface definition
+- Frozen design context as immutable source of truth
 
-## Technology
+### Phase 2: Asynchronous Execution
 
-- **LLMs**
-- **Simulation Tools**
-- **OS**: Linux
+- Fully automated orchestration
+- Parallel task execution across worker pools
+- State-driven progression through artifact lifecycle
+- Human escalation for complex issues
 
-## Why This Project
+## Key Features
 
-- Hands-on experience with Generative AI applied to hardware design.
-- Exposure to RTL design and simulation workflows.
-- Contribution to research with potential for publication.
+- **Agent vs. Process Duality**: LLM-driven agents for creative tasks, deterministic processes for verification
+- **Asynchronous Parallel Execution**: Maximized throughput through independent task processing
+- **Fault Tolerance**: Dead Letter Queue system for handling unrecoverable failures
+- **Human-in-the-Loop**: Strategic oversight and expert intervention when needed
+- **State-Driven Progression**: Formal state machine for all artifacts (Stub → Draft → Testing → Passing → Frozen)
+
+## Technology Stack
+
+- **Multi-Agent Architecture**: Specialized agents for different design tasks
+- **Message Queuing**: Asynchronous task distribution and result collection
+- **HDL Generation**: SystemVerilog RTL and testbench generation
+- **Simulation Integration**: EDA tool integration for verification
+- **Schema-Driven**: Type-safe message contracts and validation
+
+## Project Goals
+
+- Accelerate hardware design from specification to verified RTL
+- Demonstrate AI-driven automation of complex engineering workflows
+- Provide scalable, fault-tolerant system architecture
+- Enable parallel execution of independent design tasks
+- Maintain human oversight for strategic decisions
+
+## Documentation
+
+- **Architecture**: See `docs/Architecture.md` for detailed system design
+- **Schemas**: See `schemas/SCHEMAS.md` for message contracts and data models
+- **Testing**: Comprehensive test suite in `tests/` directory
 
 ---
 
