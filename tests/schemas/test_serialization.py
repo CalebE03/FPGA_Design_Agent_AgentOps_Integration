@@ -13,6 +13,9 @@ from schemas import (
     AgentType,
     WorkerType,
     CostMetrics,
+    AnalysisMetadata,
+    DistilledDataset,
+    ReflectionInsights,
     TaskMessage,
     ResultMessage,
 )
@@ -95,6 +98,66 @@ class TestJSONSerialization:
         assert data["metrics"]["output_tokens"] == 50
         assert data["metrics"]["cost_usd"] == 0.01
         assert "completed_at" in data
+    
+    def test_analysis_metadata_serialization(self):
+        """Test AnalysisMetadata JSON serialization."""
+        metadata = AnalysisMetadata(
+            stage="reflect",
+            failure_signature="timing_violation_001",
+            retry_count=2,
+            upstream_artifact_refs={"distilled_dataset": "/path/to/data.json"}
+        )
+        
+        json_str = metadata.model_dump_json()
+        data = json.loads(json_str)
+        
+        assert data["stage"] == "reflect"
+        assert data["failure_signature"] == "timing_violation_001"
+        assert data["retry_count"] == 2
+        assert data["upstream_artifact_refs"] == {"distilled_dataset": "/path/to/data.json"}
+        assert "timestamp" in data
+    
+    def test_distilled_dataset_serialization(self):
+        """Test DistilledDataset JSON serialization."""
+        dataset = DistilledDataset(
+            original_data_size=1048576,
+            distilled_data_size=262144,
+            compression_ratio=0.25,
+            failure_focus_areas=["clock_domain_crossing", "setup_violation"],
+            data_path="/path/to/distilled_data.json"
+        )
+        
+        json_str = dataset.model_dump_json()
+        data = json.loads(json_str)
+        
+        assert data["original_data_size"] == 1048576
+        assert data["distilled_data_size"] == 262144
+        assert data["compression_ratio"] == 0.25
+        assert data["failure_focus_areas"] == ["clock_domain_crossing", "setup_violation"]
+        assert data["data_path"] == "/path/to/distilled_data.json"
+        assert "dataset_id" in data
+        assert "created_at" in data
+    
+    def test_reflection_insights_serialization(self):
+        """Test ReflectionInsights JSON serialization."""
+        insights = ReflectionInsights(
+            hypotheses=["Clock domain crossing violation"],
+            likely_failure_points=["CDC_FF_inst"],
+            recommended_probes=["CDC_FF_inst.Q"],
+            confidence_score=0.85,
+            analysis_notes="High confidence in clock domain crossing issue"
+        )
+        
+        json_str = insights.model_dump_json()
+        data = json.loads(json_str)
+        
+        assert data["hypotheses"] == ["Clock domain crossing violation"]
+        assert data["likely_failure_points"] == ["CDC_FF_inst"]
+        assert data["recommended_probes"] == ["CDC_FF_inst.Q"]
+        assert data["confidence_score"] == 0.85
+        assert data["analysis_notes"] == "High confidence in clock domain crossing issue"
+        assert "reflection_id" in data
+        assert "created_at" in data
     
     def test_enum_serialization(self):
         """Test that enums are serialized correctly."""
@@ -196,6 +259,68 @@ class TestJSONDeserialization:
         assert result.metrics.input_tokens == 100
         assert result.metrics.output_tokens == 50
         assert result.metrics.cost_usd == 0.01
+    
+    def test_analysis_metadata_deserialization(self):
+        """Test AnalysisMetadata JSON deserialization."""
+        json_data = {
+            "stage": "reflect",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "failure_signature": "timing_violation_001",
+            "retry_count": 2,
+            "upstream_artifact_refs": {"distilled_dataset": "/path/to/data.json"}
+        }
+        
+        metadata = AnalysisMetadata.model_validate(json_data)
+        assert metadata.stage == "reflect"
+        assert metadata.failure_signature == "timing_violation_001"
+        assert metadata.retry_count == 2
+        assert metadata.upstream_artifact_refs == {"distilled_dataset": "/path/to/data.json"}
+    
+    def test_distilled_dataset_deserialization(self):
+        """Test DistilledDataset JSON deserialization."""
+        dataset_id = str(uuid4())
+        created_at = datetime.now(timezone.utc).isoformat()
+        
+        json_data = {
+            "dataset_id": dataset_id,
+            "original_data_size": 1048576,
+            "distilled_data_size": 262144,
+            "compression_ratio": 0.25,
+            "failure_focus_areas": ["clock_domain_crossing", "setup_violation"],
+            "data_path": "/path/to/distilled_data.json",
+            "created_at": created_at
+        }
+        
+        dataset = DistilledDataset.model_validate(json_data)
+        assert str(dataset.dataset_id) == dataset_id
+        assert dataset.original_data_size == 1048576
+        assert dataset.distilled_data_size == 262144
+        assert dataset.compression_ratio == 0.25
+        assert dataset.failure_focus_areas == ["clock_domain_crossing", "setup_violation"]
+        assert dataset.data_path == "/path/to/distilled_data.json"
+    
+    def test_reflection_insights_deserialization(self):
+        """Test ReflectionInsights JSON deserialization."""
+        reflection_id = str(uuid4())
+        created_at = datetime.now(timezone.utc).isoformat()
+        
+        json_data = {
+            "reflection_id": reflection_id,
+            "hypotheses": ["Clock domain crossing violation"],
+            "likely_failure_points": ["CDC_FF_inst"],
+            "recommended_probes": ["CDC_FF_inst.Q"],
+            "confidence_score": 0.85,
+            "analysis_notes": "High confidence in clock domain crossing issue",
+            "created_at": created_at
+        }
+        
+        insights = ReflectionInsights.model_validate(json_data)
+        assert str(insights.reflection_id) == reflection_id
+        assert insights.hypotheses == ["Clock domain crossing violation"]
+        assert insights.likely_failure_points == ["CDC_FF_inst"]
+        assert insights.recommended_probes == ["CDC_FF_inst.Q"]
+        assert insights.confidence_score == 0.85
+        assert insights.analysis_notes == "High confidence in clock domain crossing issue"
     
     def test_enum_deserialization(self):
         """Test enum deserialization from JSON."""
@@ -307,6 +432,69 @@ class TestRoundTripSerialization:
         assert deserialized.context["unicode"] == "Hello 世界 🌍"
         assert deserialized.context["special_chars"] == "ñáéíóú"
         assert deserialized.context["nested"]["level1"]["level2"]["level3"] == "deep_value"
+    
+    def test_analysis_metadata_round_trip(self):
+        """Test AnalysisMetadata round-trip serialization."""
+        original = AnalysisMetadata(
+            stage="reflect",
+            failure_signature="timing_violation_001",
+            retry_count=2,
+            upstream_artifact_refs={"distilled_dataset": "/path/to/data.json"}
+        )
+        
+        json_str = original.model_dump_json()
+        deserialized = AnalysisMetadata.model_validate_json(json_str)
+        
+        assert deserialized.stage == original.stage
+        assert deserialized.failure_signature == original.failure_signature
+        assert deserialized.retry_count == original.retry_count
+        assert deserialized.upstream_artifact_refs == original.upstream_artifact_refs
+        # Note: datetime comparison might have microsecond differences
+        assert abs((deserialized.timestamp - original.timestamp).total_seconds()) < 1
+    
+    def test_distilled_dataset_round_trip(self):
+        """Test DistilledDataset round-trip serialization."""
+        original = DistilledDataset(
+            original_data_size=1048576,
+            distilled_data_size=262144,
+            compression_ratio=0.25,
+            failure_focus_areas=["clock_domain_crossing", "setup_violation"],
+            data_path="/path/to/distilled_data.json"
+        )
+        
+        json_str = original.model_dump_json()
+        deserialized = DistilledDataset.model_validate_json(json_str)
+        
+        assert deserialized.dataset_id == original.dataset_id
+        assert deserialized.original_data_size == original.original_data_size
+        assert deserialized.distilled_data_size == original.distilled_data_size
+        assert deserialized.compression_ratio == original.compression_ratio
+        assert deserialized.failure_focus_areas == original.failure_focus_areas
+        assert deserialized.data_path == original.data_path
+        # Note: datetime comparison might have microsecond differences
+        assert abs((deserialized.created_at - original.created_at).total_seconds()) < 1
+    
+    def test_reflection_insights_round_trip(self):
+        """Test ReflectionInsights round-trip serialization."""
+        original = ReflectionInsights(
+            hypotheses=["Clock domain crossing violation"],
+            likely_failure_points=["CDC_FF_inst"],
+            recommended_probes=["CDC_FF_inst.Q"],
+            confidence_score=0.85,
+            analysis_notes="High confidence in clock domain crossing issue"
+        )
+        
+        json_str = original.model_dump_json()
+        deserialized = ReflectionInsights.model_validate_json(json_str)
+        
+        assert deserialized.reflection_id == original.reflection_id
+        assert deserialized.hypotheses == original.hypotheses
+        assert deserialized.likely_failure_points == original.likely_failure_points
+        assert deserialized.recommended_probes == original.recommended_probes
+        assert deserialized.confidence_score == original.confidence_score
+        assert deserialized.analysis_notes == original.analysis_notes
+        # Note: datetime comparison might have microsecond differences
+        assert abs((deserialized.created_at - original.created_at).total_seconds()) < 1
 
 
 class TestSerializationEdgeCases:

@@ -13,9 +13,190 @@ from schemas import (
     AgentType,
     WorkerType,
     CostMetrics,
+    AnalysisMetadata,
+    DistilledDataset,
+    ReflectionInsights,
     TaskMessage,
     ResultMessage,
 )
+
+
+class TestAnalysisMetadata:
+    """Test cases for AnalysisMetadata model."""
+    
+    def test_valid_analysis_metadata(self):
+        """Test creating valid AnalysisMetadata."""
+        metadata = AnalysisMetadata(
+            stage="reflect",
+            failure_signature="timing_violation_001",
+            retry_count=2,
+            upstream_artifact_refs={"distilled_dataset": "/path/to/data.json"}
+        )
+        
+        assert metadata.stage == "reflect"
+        assert metadata.failure_signature == "timing_violation_001"
+        assert metadata.retry_count == 2
+        assert metadata.upstream_artifact_refs == {"distilled_dataset": "/path/to/data.json"}
+        assert isinstance(metadata.timestamp, datetime)
+    
+    def test_analysis_metadata_minimal(self):
+        """Test creating AnalysisMetadata with minimal required fields."""
+        metadata = AnalysisMetadata(stage="distill")
+        
+        assert metadata.stage == "distill"
+        assert metadata.failure_signature is None
+        assert metadata.retry_count == 0
+        assert metadata.upstream_artifact_refs is None
+        assert isinstance(metadata.timestamp, datetime)
+    
+    def test_analysis_metadata_validation_errors(self):
+        """Test AnalysisMetadata validation errors."""
+        with pytest.raises(ValidationError):
+            AnalysisMetadata()  # Missing required stage field
+        
+        with pytest.raises(ValidationError):
+            AnalysisMetadata(stage=123)  # Invalid stage type
+        
+        with pytest.raises(ValidationError):
+            AnalysisMetadata(stage="reflect", retry_count="invalid")  # Invalid retry_count type
+
+
+class TestDistilledDataset:
+    """Test cases for DistilledDataset model."""
+    
+    def test_valid_distilled_dataset(self):
+        """Test creating valid DistilledDataset."""
+        dataset = DistilledDataset(
+            original_data_size=1048576,
+            distilled_data_size=262144,
+            compression_ratio=0.25,
+            failure_focus_areas=["clock_domain_crossing", "setup_violation"],
+            data_path="/path/to/distilled_data.json"
+        )
+        
+        assert dataset.original_data_size == 1048576
+        assert dataset.distilled_data_size == 262144
+        assert dataset.compression_ratio == 0.25
+        assert dataset.failure_focus_areas == ["clock_domain_crossing", "setup_violation"]
+        assert dataset.data_path == "/path/to/distilled_data.json"
+        assert isinstance(dataset.dataset_id, UUID)
+        assert isinstance(dataset.created_at, datetime)
+    
+    def test_distilled_dataset_validation_errors(self):
+        """Test DistilledDataset validation errors."""
+        with pytest.raises(ValidationError):
+            DistilledDataset()  # Missing required fields
+        
+        with pytest.raises(ValidationError):
+            DistilledDataset(
+                original_data_size="invalid",
+                distilled_data_size=262144,
+                compression_ratio=0.25,
+                failure_focus_areas=["test"],
+                data_path="/path/to/data.json"
+            )
+        
+        with pytest.raises(ValidationError):
+            DistilledDataset(
+                original_data_size=1048576,
+                distilled_data_size=262144,
+                compression_ratio="invalid",
+                failure_focus_areas=["test"],
+                data_path="/path/to/data.json"
+            )
+    
+    def test_distilled_dataset_edge_cases(self):
+        """Test DistilledDataset with edge cases."""
+        # Test with empty failure focus areas
+        dataset = DistilledDataset(
+            original_data_size=100,
+            distilled_data_size=50,
+            compression_ratio=0.5,
+            failure_focus_areas=[],
+            data_path="/path/to/data.json"
+        )
+        assert dataset.failure_focus_areas == []
+        
+        # Test with zero compression
+        dataset_zero = DistilledDataset(
+            original_data_size=100,
+            distilled_data_size=100,
+            compression_ratio=1.0,
+            failure_focus_areas=["no_compression"],
+            data_path="/path/to/data.json"
+        )
+        assert dataset_zero.compression_ratio == 1.0
+
+
+class TestReflectionInsights:
+    """Test cases for ReflectionInsights model."""
+    
+    def test_valid_reflection_insights(self):
+        """Test creating valid ReflectionInsights."""
+        insights = ReflectionInsights(
+            hypotheses=["Clock domain crossing violation", "Setup time violation"],
+            likely_failure_points=["CDC_FF_inst", "Data path delay"],
+            recommended_probes=["CDC_FF_inst.Q", "clk_to_data_delay"],
+            confidence_score=0.85,
+            analysis_notes="High confidence in clock domain crossing issue"
+        )
+        
+        assert insights.hypotheses == ["Clock domain crossing violation", "Setup time violation"]
+        assert insights.likely_failure_points == ["CDC_FF_inst", "Data path delay"]
+        assert insights.recommended_probes == ["CDC_FF_inst.Q", "clk_to_data_delay"]
+        assert insights.confidence_score == 0.85
+        assert insights.analysis_notes == "High confidence in clock domain crossing issue"
+        assert isinstance(insights.reflection_id, UUID)
+        assert isinstance(insights.created_at, datetime)
+    
+    def test_reflection_insights_validation_errors(self):
+        """Test ReflectionInsights validation errors."""
+        with pytest.raises(ValidationError):
+            ReflectionInsights()  # Missing required fields
+        
+        with pytest.raises(ValidationError):
+            ReflectionInsights(
+                hypotheses=["test"],
+                likely_failure_points=["test"],
+                recommended_probes=["test"],
+                confidence_score=1.5,  # Invalid: > 1.0
+                analysis_notes="test"
+            )
+        
+        with pytest.raises(ValidationError):
+            ReflectionInsights(
+                hypotheses=["test"],
+                likely_failure_points=["test"],
+                recommended_probes=["test"],
+                confidence_score=-0.1,  # Invalid: < 0.0
+                analysis_notes="test"
+            )
+    
+    def test_reflection_insights_edge_cases(self):
+        """Test ReflectionInsights with edge cases."""
+        # Test with empty lists
+        insights = ReflectionInsights(
+            hypotheses=[],
+            likely_failure_points=[],
+            recommended_probes=[],
+            confidence_score=0.0,
+            analysis_notes=""
+        )
+        assert insights.hypotheses == []
+        assert insights.likely_failure_points == []
+        assert insights.recommended_probes == []
+        assert insights.confidence_score == 0.0
+        assert insights.analysis_notes == ""
+        
+        # Test with maximum confidence
+        insights_max = ReflectionInsights(
+            hypotheses=["certain"],
+            likely_failure_points=["point"],
+            recommended_probes=["probe"],
+            confidence_score=1.0,
+            analysis_notes="Maximum confidence"
+        )
+        assert insights_max.confidence_score == 1.0
 
 
 class TestCostMetrics:
@@ -119,6 +300,26 @@ class TestTaskMessage:
             assert task.entity_type == EntityType.REASONING
             assert task.task_type == agent_type
     
+    def test_task_message_new_agent_types(self, sample_context):
+        """Test TaskMessage with new agent types (REFLECTION and SPECIFICATION_HELPER)."""
+        # Test REFLECTION agent
+        reflection_task = TaskMessage(
+            entity_type=EntityType.REASONING,
+            task_type=AgentType.REFLECTION,
+            context=sample_context
+        )
+        assert reflection_task.entity_type == EntityType.REASONING
+        assert reflection_task.task_type == AgentType.REFLECTION
+        
+        # Test SPECIFICATION_HELPER agent
+        spec_helper_task = TaskMessage(
+            entity_type=EntityType.REASONING,
+            task_type=AgentType.SPECIFICATION_HELPER,
+            context=sample_context
+        )
+        assert spec_helper_task.entity_type == EntityType.REASONING
+        assert spec_helper_task.task_type == AgentType.SPECIFICATION_HELPER
+    
     def test_task_message_worker_types(self, sample_context):
         """Test TaskMessage with different worker types."""
         for worker_type in WorkerType:
@@ -129,6 +330,17 @@ class TestTaskMessage:
             )
             assert task.entity_type == EntityType.LIGHT_DETERMINISTIC
             assert task.task_type == worker_type
+    
+    def test_task_message_new_worker_types(self, sample_context):
+        """Test TaskMessage with new worker types (DISTILLATION)."""
+        # Test DISTILLATION worker
+        distillation_task = TaskMessage(
+            entity_type=EntityType.LIGHT_DETERMINISTIC,
+            task_type=WorkerType.DISTILLATION,
+            context=sample_context
+        )
+        assert distillation_task.entity_type == EntityType.LIGHT_DETERMINISTIC
+        assert distillation_task.task_type == WorkerType.DISTILLATION
     
     def test_task_message_priorities(self, sample_context):
         """Test TaskMessage with different priorities."""
@@ -278,6 +490,51 @@ class TestResultMessage:
         assert result.metrics.input_tokens == 1000
         assert result.metrics.output_tokens == 500
         assert result.metrics.cost_usd == 0.05
+    
+    def test_result_message_with_analysis_pipeline_artifacts(self, sample_task_id, sample_correlation_id):
+        """Test ResultMessage with new analysis pipeline artifacts."""
+        # Create analysis metadata
+        analysis_metadata = AnalysisMetadata(
+            stage="reflect",
+            failure_signature="timing_violation_001",
+            retry_count=1,
+            upstream_artifact_refs={"distilled_dataset": "/path/to/data.json"}
+        )
+        
+        # Create distilled dataset
+        distilled_dataset = DistilledDataset(
+            original_data_size=1048576,
+            distilled_data_size=262144,
+            compression_ratio=0.25,
+            failure_focus_areas=["clock_domain_crossing"],
+            data_path="/path/to/distilled_data.json"
+        )
+        
+        # Create reflection insights
+        reflection_insights = ReflectionInsights(
+            hypotheses=["Clock domain crossing violation"],
+            likely_failure_points=["CDC_FF_inst"],
+            recommended_probes=["CDC_FF_inst.Q"],
+            confidence_score=0.85,
+            analysis_notes="High confidence in clock domain crossing issue"
+        )
+        
+        result = ResultMessage(
+            task_id=sample_task_id,
+            correlation_id=sample_correlation_id,
+            status=TaskStatus.SUCCESS,
+            log_output="Analysis pipeline completed",
+            analysis_metadata=analysis_metadata,
+            distilled_dataset=distilled_dataset,
+            reflection_insights=reflection_insights
+        )
+        
+        assert result.analysis_metadata == analysis_metadata
+        assert result.distilled_dataset == distilled_dataset
+        assert result.reflection_insights == reflection_insights
+        assert result.analysis_metadata.stage == "reflect"
+        assert result.distilled_dataset.compression_ratio == 0.25
+        assert result.reflection_insights.confidence_score == 0.85
 
 
 class TestModelIntegration:

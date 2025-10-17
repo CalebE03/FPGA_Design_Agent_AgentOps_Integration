@@ -2,7 +2,7 @@
 
 # Set the version for your data contracts.
 # This allows you to track changes to the schemas themselves.
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 # Import the core models to the top level of the package.
 # This allows other developers to write `from schemas import TaskMessage`
@@ -14,6 +14,9 @@ from .contracts import (
     AgentType,
     WorkerType,
     CostMetrics,
+    AnalysisMetadata,
+    DistilledDataset,
+    ReflectionInsights,
     TaskMessage,
     ResultMessage,
 )
@@ -26,6 +29,9 @@ __all__ = [
     "AgentType",
     "WorkerType",
     "CostMetrics",
+    "AnalysisMetadata",
+    "DistilledDataset",
+    "ReflectionInsights",
     "TaskMessage",
     "ResultMessage",
 ]

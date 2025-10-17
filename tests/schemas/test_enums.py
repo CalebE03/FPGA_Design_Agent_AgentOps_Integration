@@ -81,6 +81,8 @@ class TestEntityType:
 
 
 class TestAgentType:
+    """TODO: Add Reflection agent test"""
+
     """Test cases for AgentType enum."""
     
     def test_enum_values(self):
@@ -90,7 +92,9 @@ class TestAgentType:
             "IMPLEMENTATION": "ImplementationAgent",
             "TESTBENCH": "TestbenchAgent",
             "DEBUG": "DebugAgent",
-            "INTEGRATION": "IntegrationAgent"
+            "INTEGRATION": "IntegrationAgent",
+            "REFLECTION": "ReflectionAgent",
+            "SPECIFICATION_HELPER": "SpecificationHelperAgent"
         }
         
         for name, expected_value in expected_values.items():
@@ -99,7 +103,7 @@ class TestAgentType:
     
     def test_enum_members(self):
         """Test that all expected members exist."""
-        expected_members = {"PLANNER", "IMPLEMENTATION", "TESTBENCH", "DEBUG", "INTEGRATION"}
+        expected_members = {"PLANNER", "IMPLEMENTATION", "TESTBENCH", "DEBUG", "INTEGRATION", "REFLECTION", "SPECIFICATION_HELPER"}
         actual_members = {member.name for member in AgentType}
         assert actual_members == expected_members
     
@@ -110,9 +114,12 @@ class TestAgentType:
         assert "Agent" in AgentType.TESTBENCH.value
         assert "Agent" in AgentType.DEBUG.value
         assert "Agent" in AgentType.INTEGRATION.value
+        assert "Agent" in AgentType.REFLECTION.value
+        assert "Agent" in AgentType.SPECIFICATION_HELPER.value
 
 
 class TestWorkerType:
+    """TODO: Add Distillation worker test"""
     """Test cases for WorkerType enum."""
     
     def test_enum_values(self):
@@ -120,7 +127,8 @@ class TestWorkerType:
         expected_values = {
             "LINTER": "LinterWorker",
             "SIMULATOR": "SimulatorWorker",
-            "SYNTHESIZER": "SynthesizerWorker"
+            "SYNTHESIZER": "SynthesizerWorker",
+            "DISTILLATION": "DistillationWorker"
         }
         
         for name, expected_value in expected_values.items():
@@ -129,7 +137,7 @@ class TestWorkerType:
     
     def test_enum_members(self):
         """Test that all expected members exist."""
-        expected_members = {"LINTER", "SIMULATOR", "SYNTHESIZER"}
+        expected_members = {"LINTER", "SIMULATOR", "SYNTHESIZER", "DISTILLATION"}
         actual_members = {member.name for member in WorkerType}
         assert actual_members == expected_members
     
@@ -138,6 +146,7 @@ class TestWorkerType:
         assert "Worker" in WorkerType.LINTER.value
         assert "Worker" in WorkerType.SIMULATOR.value
         assert "Worker" in WorkerType.SYNTHESIZER.value
+        assert "Worker" in WorkerType.DISTILLATION.value
 
 
 class TestEnumIntegration:

@@ -13,6 +13,9 @@ from schemas import (
     AgentType,
     WorkerType,
     CostMetrics,
+    AnalysisMetadata,
+    DistilledDataset,
+    ReflectionInsights,
     TaskMessage,
     ResultMessage,
 )
@@ -347,6 +350,54 @@ class TestCustomValidation:
         # Check that the error details are informative
         error_details = error.errors()[0]
         assert "input_tokens" in str(error_details)
+    
+    def test_analysis_metadata_validation_errors(self):
+        """Test AnalysisMetadata validation with various invalid inputs."""
+        # Test missing required fields
+        with pytest.raises(ValidationError) as exc_info:
+            AnalysisMetadata()
+        assert "stage" in str(exc_info.value)
+        
+        # Test invalid types
+        with pytest.raises(ValidationError):
+            AnalysisMetadata(stage=123)
+        
+        with pytest.raises(ValidationError):
+            AnalysisMetadata(stage="reflect", retry_count="invalid")
+    
+    def test_distilled_dataset_validation_errors(self):
+        """Test DistilledDataset validation with various invalid inputs."""
+        # Test missing required fields
+        with pytest.raises(ValidationError) as exc_info:
+            DistilledDataset()
+        assert "original_data_size" in str(exc_info.value)
+        
+        # Test invalid types
+        with pytest.raises(ValidationError):
+            DistilledDataset(
+                original_data_size="invalid",
+                distilled_data_size=262144,
+                compression_ratio=0.25,
+                failure_focus_areas=["test"],
+                data_path="/path/to/data.json"
+            )
+    
+    def test_reflection_insights_validation_errors(self):
+        """Test ReflectionInsights validation with various invalid inputs."""
+        # Test missing required fields
+        with pytest.raises(ValidationError) as exc_info:
+            ReflectionInsights()
+        assert "hypotheses" in str(exc_info.value)
+        
+        # Test invalid confidence score
+        with pytest.raises(ValidationError):
+            ReflectionInsights(
+                hypotheses=["test"],
+                likely_failure_points=["test"],
+                recommended_probes=["test"],
+                confidence_score=1.5,  # Invalid: > 1.0
+                analysis_notes="test"
+            )
     
     def test_multiple_validation_errors(self):
         """Test that multiple validation errors are reported."""
