@@ -1,5 +1,5 @@
 # contracts.py
-# Version: 1.0.1
+# Version: 1.1.0
 # Author: Jacobo Forero
 # Description: This file defines the core data contracts for the asynchronous
 # multi-agent hardware design system. All communication between the Orchestrator
@@ -40,6 +40,8 @@ class EntityType(Enum):
     LIGHT_DETERMINISTIC = "LIGHT_DETERMINISTIC"  # Fast, lightweight deterministic tasks
     HEAVY_DETERMINISTIC = "HEAVY_DETERMINISTIC"  # Resource-intensive, long-running deterministic tasks
 
+
+
 class AgentType(Enum):
     """Specifies which LLM-based agent should execute the task."""
     PLANNER = "PlannerAgent"
@@ -47,12 +49,15 @@ class AgentType(Enum):
     TESTBENCH = "TestbenchAgent"
     DEBUG = "DebugAgent"
     INTEGRATION = "IntegrationAgent"
+    REFLECTION = "ReflectionAgent"
+    SPECIFICATION_HELPER = "SpecificationHelperAgent"
 
 class WorkerType(Enum):
     """Specifies which deterministic worker should execute the task."""
     LINTER = "LinterWorker"
     SIMULATOR = "SimulatorWorker"
     SYNTHESIZER = "SynthesizerWorker"
+    DISTILLATION = "DistillationWorker"
 
 
 # --- Sub-Models for Composition ---
@@ -62,6 +67,37 @@ class CostMetrics(BaseModel):
     input_tokens: int
     output_tokens: int
     cost_usd: float = Field(..., description="Calculated cost in USD for this specific operation.")
+
+
+class AnalysisMetadata(BaseModel):
+    """Metadata for analysis pipeline stages including timestamps, failure signatures, and retry counts."""
+    stage: str = Field(..., description="Analysis stage: distill, reflect, or debug")
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="When this analysis stage was executed")
+    failure_signature: Optional[str] = Field(None, description="Unique identifier for the type of failure observed")
+    retry_count: int = Field(default=0, description="Number of retry attempts for this analysis stage")
+    upstream_artifact_refs: Optional[Dict[str, str]] = Field(None, description="References to upstream artifacts (e.g., distilled dataset paths)")
+
+
+class DistilledDataset(BaseModel):
+    """Structured representation of distilled waveform/log data."""
+    dataset_id: UUID = Field(default_factory=uuid4, description="Unique identifier for this distilled dataset")
+    original_data_size: int = Field(..., description="Size of original waveform/log data in bytes")
+    distilled_data_size: int = Field(..., description="Size of distilled data in bytes")
+    compression_ratio: float = Field(..., description="Ratio of original to distilled size")
+    failure_focus_areas: list[str] = Field(..., description="List of failure-relevant areas identified in the data")
+    data_path: str = Field(..., description="Path to the distilled dataset file")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="When the distillation was completed")
+
+
+class ReflectionInsights(BaseModel):
+    """Structured insights produced by the Reflection Agent."""
+    reflection_id: UUID = Field(default_factory=uuid4, description="Unique identifier for this reflection")
+    hypotheses: list[str] = Field(..., description="List of root-cause hypotheses")
+    likely_failure_points: list[str] = Field(..., description="Identified likely failure points in the design")
+    recommended_probes: list[str] = Field(..., description="Recommended debugging probes or investigation paths")
+    confidence_score: float = Field(..., ge=0.0, le=1.0, description="Confidence in the analysis (0.0 to 1.0)")
+    analysis_notes: str = Field(..., description="Detailed analysis notes for downstream debugging")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="When the reflection was completed")
 
 
 # --- Core Message Schemas ---
@@ -103,3 +139,8 @@ class ResultMessage(BaseModel):
     # Optional fields for specific use cases
     reflections: Optional[str] = Field(None, description="For agents (especially DebugAgent), a reflection on the task outcome.")
     metrics: Optional[CostMetrics] = Field(None, description="Cost and token usage information, primarily for agent tasks.")
+    
+    # Analysis pipeline artifacts
+    analysis_metadata: Optional[AnalysisMetadata] = Field(None, description="Metadata for analysis pipeline stages")
+    distilled_dataset: Optional[DistilledDataset] = Field(None, description="Distilled dataset from distillation tasks")
+    reflection_insights: Optional[ReflectionInsights] = Field(None, description="Structured insights from reflection tasks")

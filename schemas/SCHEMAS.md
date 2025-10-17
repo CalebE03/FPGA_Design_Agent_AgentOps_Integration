@@ -1,6 +1,6 @@
 # Multi-Agent Hardware Design System - Schema Documentation
 
-**Version:** 1.0.1  
+**Version:** 1.1.0  
 **Author:** Jacobo Forero  
 **Team:** Jacobo Forero, Dexter Pressley, Mateus Verffel Mayer, Caleb Elliott, Andrew Chambers, Sammy Fares
 
@@ -56,23 +56,26 @@ Distinguishes between different types of processing entities based on their char
 
 Specifies which LLM-based agent should execute the task.
 
-| Value                                    | Description                          |
-| ---------------------------------------- | ------------------------------------ |
-| `PLANNER = "PlannerAgent"`               | High-level planning and architecture |
-| `IMPLEMENTATION = "ImplementationAgent"` | Code generation and implementation   |
-| `TESTBENCH = "TestbenchAgent"`           | Test case generation and validation  |
-| `DEBUG = "DebugAgent"`                   | Problem diagnosis and debugging      |
-| `INTEGRATION = "IntegrationAgent"`       | System integration and deployment    |
+| Value                                               | Description                            |
+| --------------------------------------------------- | -------------------------------------- |
+| `PLANNER = "PlannerAgent"`                          | High-level planning and architecture   |
+| `IMPLEMENTATION = "ImplementationAgent"`            | Code generation and implementation     |
+| `TESTBENCH = "TestbenchAgent"`                      | Test case generation and validation    |
+| `DEBUG = "DebugAgent"`                              | Problem diagnosis and debugging        |
+| `INTEGRATION = "IntegrationAgent"`                  | System integration and deployment      |
+| `REFLECTION = "ReflectionAgent"`                    | AI-powered analysis of distilled data  |
+| `SPECIFICATION_HELPER = "SpecificationHelperAgent"` | Specification convergence and guidance |
 
 ### **WorkerType**
 
 Specifies which deterministic worker should execute the task.
 
-| Value                               | Description                          |
-| ----------------------------------- | ------------------------------------ |
-| `LINTER = "LinterWorker"`           | Code linting and style checking      |
-| `SIMULATOR = "SimulatorWorker"`     | Hardware simulation and verification |
-| `SYNTHESIZER = "SynthesizerWorker"` | Logic synthesis and optimization     |
+| Value                                 | Description                                    |
+| ------------------------------------- | ---------------------------------------------- |
+| `LINTER = "LinterWorker"`             | Code linting and style checking                |
+| `SIMULATOR = "SimulatorWorker"`       | Hardware simulation and verification           |
+| `SYNTHESIZER = "SynthesizerWorker"`   | Logic synthesis and optimization               |
+| `DISTILLATION = "DistillationWorker"` | Waveform/log data distillation and compression |
 
 ---
 
@@ -87,6 +90,46 @@ A structured model for tracking LLM-related costs, embedded in results.
 | `input_tokens`  | `int`   | ✅       | Number of input tokens consumed           |
 | `output_tokens` | `int`   | ✅       | Number of output tokens generated         |
 | `cost_usd`      | `float` | ✅       | Calculated cost in USD for this operation |
+
+### **AnalysisMetadata**
+
+Metadata for analysis pipeline stages including timestamps, failure signatures, and retry counts.
+
+| Field                    | Type             | Required | Description                                                      |
+| ------------------------ | ---------------- | -------- | ---------------------------------------------------------------- |
+| `stage`                  | `str`            | ✅       | Analysis stage: distill, reflect, or debug                       |
+| `timestamp`              | `datetime`       | ✅       | When this analysis stage was executed                            |
+| `failure_signature`      | `str`            | ❌       | Unique identifier for the type of failure observed               |
+| `retry_count`            | `int`            | ✅       | Number of retry attempts for this analysis stage                 |
+| `upstream_artifact_refs` | `Dict[str, str]` | ❌       | References to upstream artifacts (e.g., distilled dataset paths) |
+
+### **DistilledDataset**
+
+Structured representation of distilled waveform/log data.
+
+| Field                 | Type        | Required | Description                                           |
+| --------------------- | ----------- | -------- | ----------------------------------------------------- |
+| `dataset_id`          | `UUID`      | ✅       | Unique identifier for this distilled dataset          |
+| `original_data_size`  | `int`       | ✅       | Size of original waveform/log data in bytes           |
+| `distilled_data_size` | `int`       | ✅       | Size of distilled data in bytes                       |
+| `compression_ratio`   | `float`     | ✅       | Ratio of original to distilled size                   |
+| `failure_focus_areas` | `list[str]` | ✅       | List of failure-relevant areas identified in the data |
+| `data_path`           | `str`       | ✅       | Path to the distilled dataset file                    |
+| `created_at`          | `datetime`  | ✅       | When the distillation was completed                   |
+
+### **ReflectionInsights**
+
+Structured insights produced by the Reflection Agent.
+
+| Field                   | Type        | Required | Description                                         |
+| ----------------------- | ----------- | -------- | --------------------------------------------------- |
+| `reflection_id`         | `UUID`      | ✅       | Unique identifier for this reflection               |
+| `hypotheses`            | `list[str]` | ✅       | List of root-cause hypotheses                       |
+| `likely_failure_points` | `list[str]` | ✅       | Identified likely failure points in the design      |
+| `recommended_probes`    | `list[str]` | ✅       | Recommended debugging probes or investigation paths |
+| `confidence_score`      | `float`     | ✅       | Confidence in the analysis (0.0 to 1.0)             |
+| `analysis_notes`        | `str`       | ✅       | Detailed analysis notes for downstream debugging    |
+| `created_at`            | `datetime`  | ✅       | When the reflection was completed                   |
 
 ### **TaskMessage**
 
@@ -124,16 +167,19 @@ The fundamental unit of work in the system.
 
 The fundamental unit of result in the system.
 
-| Field            | Type          | Required | Default        | Description                                       |
-| ---------------- | ------------- | -------- | -------------- | ------------------------------------------------- |
-| `task_id`        | `UUID`        | ✅       | -              | The ID of the task this result corresponds to     |
-| `correlation_id` | `UUID`        | ✅       | -              | The correlation ID from the original task         |
-| `completed_at`   | `datetime`    | ✅       | Auto-generated | Timestamp in UTC when the task was completed      |
-| `status`         | `TaskStatus`  | ✅       | -              | The final outcome of the task                     |
-| `artifacts_path` | `str`         | ❌       | `None`         | Path to any generated artifacts                   |
-| `log_output`     | `str`         | ✅       | -              | Summary or full stdout/stderr from task execution |
-| `reflections`    | `str`         | ❌       | `None`         | For agents, a reflection on the task outcome      |
-| `metrics`        | `CostMetrics` | ❌       | `None`         | Cost and token usage information                  |
+| Field                 | Type                 | Required | Default        | Description                                       |
+| --------------------- | -------------------- | -------- | -------------- | ------------------------------------------------- |
+| `task_id`             | `UUID`               | ✅       | -              | The ID of the task this result corresponds to     |
+| `correlation_id`      | `UUID`               | ✅       | -              | The correlation ID from the original task         |
+| `completed_at`        | `datetime`           | ✅       | Auto-generated | Timestamp in UTC when the task was completed      |
+| `status`              | `TaskStatus`         | ✅       | -              | The final outcome of the task                     |
+| `artifacts_path`      | `str`                | ❌       | `None`         | Path to any generated artifacts                   |
+| `log_output`          | `str`                | ✅       | -              | Summary or full stdout/stderr from task execution |
+| `reflections`         | `str`                | ❌       | `None`         | For agents, a reflection on the task outcome      |
+| `metrics`             | `CostMetrics`        | ❌       | `None`         | Cost and token usage information                  |
+| `analysis_metadata`   | `AnalysisMetadata`   | ❌       | `None`         | Metadata for analysis pipeline stages             |
+| `distilled_dataset`   | `DistilledDataset`   | ❌       | `None`         | Distilled dataset from distillation tasks         |
+| `reflection_insights` | `ReflectionInsights` | ❌       | `None`         | Structured insights from reflection tasks         |
 
 **Example ResultMessage:**
 
@@ -150,6 +196,33 @@ The fundamental unit of result in the system.
         "input_tokens": 2000,
         "output_tokens": 1000,
         "cost_usd": 0.10
+    },
+    "analysis_metadata": {
+        "stage": "reflect",
+        "timestamp": "2024-01-15T10:35:00Z",
+        "failure_signature": "timing_violation_001",
+        "retry_count": 0,
+        "upstream_artifact_refs": {
+            "distilled_dataset": "/path/to/distilled_data.json"
+        }
+    },
+    "distilled_dataset": {
+        "dataset_id": "456e7890-e89b-12d3-a456-426614174001",
+        "original_data_size": 1048576,
+        "distilled_data_size": 262144,
+        "compression_ratio": 0.25,
+        "failure_focus_areas": ["clock_domain_crossing", "setup_violation"],
+        "data_path": "/path/to/distilled_data.json",
+        "created_at": "2024-01-15T10:30:00Z"
+    },
+    "reflection_insights": {
+        "reflection_id": "789e0123-e89b-12d3-a456-426614174002",
+        "hypotheses": ["Clock domain crossing violation", "Setup time violation"],
+        "likely_failure_points": ["CDC_FF_inst", "Data path delay"],
+        "recommended_probes": ["CDC_FF_inst.Q", "clk_to_data_delay"],
+        "confidence_score": 0.85,
+        "analysis_notes": "High confidence in clock domain crossing issue based on timing analysis",
+        "created_at": "2024-01-15T10:35:00Z"
     }
 }
 ```
@@ -183,6 +256,9 @@ from schemas import (
     AgentType,
     WorkerType,
     CostMetrics,
+    AnalysisMetadata,
+    DistilledDataset,
+    ReflectionInsights,
     TaskMessage,
     ResultMessage,
 )
@@ -191,6 +267,7 @@ from schemas import (
 ### **Creating a Task:**
 
 ```python
+# Planning task
 task = TaskMessage(
     entity_type=EntityType.REASONING,
     task_type=AgentType.PLANNER,
@@ -198,6 +275,30 @@ task = TaskMessage(
     context={
         "node_id": "design_123",
         "specs": {"frequency": "100MHz"}
+    }
+)
+
+# Reflection task for analysis pipeline
+reflection_task = TaskMessage(
+    entity_type=EntityType.REASONING,
+    task_type=AgentType.REFLECTION,
+    priority=TaskPriority.MEDIUM,
+    context={
+        "node_id": "design_123",
+        "distilled_dataset_path": "/path/to/distilled_data.json",
+        "failure_context": "timing_violation_001"
+    }
+)
+
+# Distillation task for data processing
+distillation_task = TaskMessage(
+    entity_type=EntityType.LIGHT_DETERMINISTIC,
+    task_type=WorkerType.DISTILLATION,
+    priority=TaskPriority.MEDIUM,
+    context={
+        "node_id": "design_123",
+        "waveform_path": "/path/to/waveform.vcd",
+        "log_path": "/path/to/simulation.log"
     }
 )
 ```
@@ -237,7 +338,15 @@ result = ResultMessage(
 
 ## 📝 **Schema Versioning**
 
-- **Current Version:** 1.0.1
+- **Current Version:** 1.1.0
 - **Backward Compatibility:** Maintained through careful field evolution
 - **Breaking Changes:** Will increment major version number
 - **Documentation:** All changes tracked in this document
+
+### **Version 1.1.0 Changes:**
+
+- Added `REFLECTION` and `SPECIFICATION_HELPER` agent types
+- Added `DISTILLATION` worker type
+- Added new analysis pipeline models: `AnalysisMetadata`, `DistilledDataset`, `ReflectionInsights`
+- Enhanced `ResultMessage` with analysis pipeline artifacts
+- Updated documentation with new examples and usage patterns
