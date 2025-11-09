@@ -1,6 +1,6 @@
 # Multi-Agent Hardware Design System - Schema Documentation
 
-**Version:** 1.1.0  
+**Version:** 1.2.0  
 **Author:** Jacobo Forero  
 **Team:** Jacobo Forero, Dexter Pressley, Mateus Verffel Mayer, Caleb Elliott, Andrew Chambers, Sammy Fares
 
@@ -227,6 +227,33 @@ The fundamental unit of result in the system.
 }
 ```
 
+- [Specification Models](#specification-models-l1-l5)
+
+### **Specification Models (L1-L5)**
+
+Tier‑1 planning artifacts are modeled in `schemas/specifications.py`. They extend a shared `SpecificationDocument` base (metadata such as `spec_id`, `state`, `revision`, `created_by`, `approved_by`, content hash, and upstream references). Each level adds its own payload:
+
+| Model             | Purpose                          | Key Fields                                                                                                                                                                             |
+| ----------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `L1Specification` | Functional intent                | `role_summary`, `key_rules`, `performance_intent`, `reset_semantics`, `corner_cases`, `open_questions`                                                                                 |
+| `L2Specification` | Interface contract               | `clocking` (list of `ClockingInfo` entries with clock/reset polarity), `signals` (direction + width expression), `handshake_semantics`, `transaction_unit`, `configuration_parameters` |
+| `L3Specification` | Verification plan                | `test_goals`, `oracle_strategy`, `stimulus_strategy`, `pass_fail_criteria`, `coverage_targets`, `reset_constraints`, `scenarios`                                                       |
+| `L4Specification` | Architecture / microarchitecture | `block_diagram` nodes, `dependencies`, `clock_domains`, `resource_strategy`, `latency_budget`, `assertion_plan`                                                                        |
+| `L5Specification` | Acceptance & sign-off plan       | `required_artifacts`, `acceptance_metrics` (operator/target pairs keyed to L3 coverage IDs), `exclusions`, `synthesis_target`                                                          |
+
+The immutable bundle of approved levels is represented by `FrozenSpecification` (captures references to the frozen L1–L5 documents plus the design-context artifact URI). All five child documents must be in `FROZEN` state and share the same `spec_id`, enabling Tier‑1 persistence to be read safely by downstream agents.
+
+Supporting enums/classes include:
+
+- `SpecificationLevel`, `SpecificationState`
+- `ClockPolarity`, `ResetPolarity`, `ClockingInfo`
+- `SignalDirection`, `SignalDefinition`, `HandshakeProtocol`, `ConfigurationParameter`
+- `VerificationScenario`, `CoverageTarget`, `ResetConstraint`
+- `BlockDiagramNode`, `DependencyEdge`, `ClockDomain`, `AssertionPlan`
+- `ArtifactRequirement`, `AcceptanceMetric`
+
+These models formalize the L1–L5 checklist described in `docs/Architecture.md` and should be used whenever persisting or validating planning artifacts.
+
 ---
 
 ## 🔄 **Schema Relationships**
@@ -342,6 +369,11 @@ result = ResultMessage(
 - **Backward Compatibility:** Maintained through careful field evolution
 - **Breaking Changes:** Will increment major version number
 - **Documentation:** All changes tracked in this document
+
+### **Version 1.2.0 Changes:**
+
+- Added Tier-1 planning schemas (`SpecificationDocument`, `L1`–`L5` models, supporting enums, and `FrozenSpecification`) to capture the complete L1–L5 checklist and Design Context artifacts.
+- Documented these models in the Specification Models section.
 
 ### **Version 1.1.0 Changes:**
 

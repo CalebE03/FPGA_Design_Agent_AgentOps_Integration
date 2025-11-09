@@ -12,6 +12,7 @@ tests/
 ├── test_models.py           # Tests for Pydantic models
 ├── test_validation.py       # Tests for validation and error handling
 ├── test_serialization.py    # Tests for JSON serialization/deserialization
+├── test_specifications.py   # Tests for L1–L5 specification schemas
 └── README.md               # This file
 ```
 
@@ -20,7 +21,7 @@ tests/
 The test suite provides **100% coverage** for all schema components:
 
 - **Enums**: TaskPriority, TaskStatus, EntityType, AgentType, WorkerType
-- **Models**: CostMetrics, AnalysisMetadata, DistilledDataset, ReflectionInsights, TaskMessage, ResultMessage
+- **Models**: CostMetrics, AnalysisMetadata, DistilledDataset, ReflectionInsights, TaskMessage, ResultMessage, L1–L5 Specifications
 - **Validation**: Error handling, edge cases, type checking
 - **Serialization**: JSON round-trip testing, complex data structures
 - **Analysis Pipeline**: Models for reflection agent and distillation process
@@ -86,6 +87,13 @@ python3 -m pytest tests/ --cov=schemas --cov-report=html:htmlcov
 - **Complex data**: Tests with nested structures, unicode, large datasets
 - **Model Serialization**: Tests serialization for AnalysisMetadata, DistilledDataset, ReflectionInsights
 
+### 5. Specification Tests (`test_specifications.py`)
+
+- **Checklist coverage**: Ensures L1–L5 payloads capture required planning data
+- **Clock/reset domains**: Validates multi-domain support in interface contracts
+- **Aggregation**: Verifies `FrozenSpecification` enforces state + spec_id consistency
+- **Error handling**: Confirms invalid states/spec IDs raise descriptive errors
+
 ## Analysis Pipeline Testing
 
 The test suite includes comprehensive testing for analysis pipeline features:
@@ -144,8 +152,8 @@ These tests are designed to run in CI/CD pipelines:
 
 ## Test Statistics
 
-- **Total Tests**: 91 (increased from 67)
-- **Additional Tests**: 24 tests for analysis pipeline features
+- **Total Tests**: 97
+- **Additional Tests**: 24 tests for analysis pipeline features + 6 specification tests
 - **Coverage**: 100% for all schema components
 - **Models Tested**: AnalysisMetadata, DistilledDataset, ReflectionInsights
 - **Enums Tested**: REFLECTION, SPECIFICATION_HELPER agents, DISTILLATION worker

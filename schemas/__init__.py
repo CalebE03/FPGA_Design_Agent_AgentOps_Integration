@@ -2,7 +2,7 @@
 
 # Set the version for your data contracts.
 # This allows you to track changes to the schemas themselves.
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 # Import the core models to the top level of the package.
 # This allows other developers to write `from schemas import TaskMessage`
@@ -20,6 +20,33 @@ from .contracts import (
     TaskMessage,
     ResultMessage,
 )
+from .specifications import (
+    SpecificationLevel,
+    SpecificationState,
+    SpecificationDocument,
+    L1Specification,
+    ClockPolarity,
+    ClockingInfo,
+    ResetPolarity,
+    SignalDirection,
+    SignalDefinition,
+    HandshakeProtocol,
+    ConfigurationParameter,
+    L2Specification,
+    VerificationScenario,
+    CoverageTarget,
+    ResetConstraint,
+    L3Specification,
+    BlockDiagramNode,
+    DependencyEdge,
+    ClockDomain,
+    AssertionPlan,
+    L4Specification,
+    ArtifactRequirement,
+    AcceptanceMetric,
+    L5Specification,
+    FrozenSpecification,
+)
 
 __all__ = [
     "__version__",
@@ -34,4 +61,29 @@ __all__ = [
     "ReflectionInsights",
     "TaskMessage",
     "ResultMessage",
+    "SpecificationLevel",
+    "SpecificationState",
+    "SpecificationDocument",
+    "L1Specification",
+    "ClockPolarity",
+    "ClockingInfo",
+    "ResetPolarity",
+    "SignalDirection",
+    "SignalDefinition",
+    "HandshakeProtocol",
+    "ConfigurationParameter",
+    "L2Specification",
+    "VerificationScenario",
+    "CoverageTarget",
+    "ResetConstraint",
+    "L3Specification",
+    "BlockDiagramNode",
+    "DependencyEdge",
+    "ClockDomain",
+    "AssertionPlan",
+    "L4Specification",
+    "ArtifactRequirement",
+    "AcceptanceMetric",
+    "L5Specification",
+    "FrozenSpecification",
 ]

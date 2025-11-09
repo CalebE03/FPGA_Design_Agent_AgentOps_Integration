@@ -28,6 +28,100 @@ This document provides a definitive overview of the system's components, their r
 
 ---
 
+### 2.1 L1–L5 Specification Checklist
+
+The upfront planning phase is gated by a five-level checklist that freezes scope, interfaces, verification intent, and success criteria before any execution work proceeds. Each level must be completed (or explicitly deferred where noted) to maintain the immutability guarantees that downstream agents rely on.
+
+### **L1: Functional Intent**
+
+**Purpose:** Establish the problem and success conditions in plain terms.
+
+**Required fields:**
+
+- Role/behavior summary (one paragraph)
+- Key rules: ordering, losslessness, flag semantics, error behavior
+- Performance intent: throughput/latency priorities (qualitative acceptable)
+- Reset semantics: what “safe after reset” means
+- Corner/illegal cases to handle
+
+**Artifacts:** Persist as `task_memory/specs/L1.json` (or equivalent), versioned with hash + author to support deterministic replay and correlation IDs.
+
+**Gate:** All fields filled or explicitly marked “proposed by planner—pending approval.”
+
+---
+
+### **L2: Interface Contract**
+
+**Purpose:** Define I/O boundaries precisely to enable testbench generation and prevent interface drift.
+
+**Required fields:**
+
+- Clock/reset: names, polarity, sync/async
+- I/O table: signal name, direction, width (width may be “TBD” if explicitly flagged)
+- Handshake semantics: ready/valid, strobes, backpressure rules
+- Transaction unit: beat/packet/word, ordering guarantees
+- Configuration parameters with provisional defaults
+
+**Artifacts:** Persist as `task_memory/specs/L2_interface.json` and ensure signal metadata conforms to enums/field names referenced by `TaskMessage.context` and `schemas/contracts.py` (direction vocabulary, width types, etc.).
+
+**Gate:** Interface frozen. Changes past this point require re-planning and propagation to dependents; Planner Agent uses this data verbatim when emitting DAG nodes and routing keys.
+
+---
+
+### **L3: Verification Plan**
+
+**Purpose:** Define how correctness will be verified before any code exists.
+
+**Required fields:**
+
+- Test goals: happy-path, boundary conditions, illegal scenarios
+- Oracle strategy: scoreboard rules and/or reference model approach
+- Stimulus strategy: directed scenarios plus randomization ranges (if applicable)
+- Pass/fail criteria per scenario
+- Coverage intents: states, transitions, events expected to hit (later mapped to simulator metrics and Task Memory coverage artifacts)
+- Reset/sequencing constraints: minimum cycles after reset, test ordering
+
+**Artifacts:** Store as `task_memory/specs/L3_verification.json`, including identifiers for coverage metrics that the Orchestrator will track when transitioning nodes through `Testing` → `Testing_Analysis` → `Passing`.
+
+**Gate:** Every evaluation node has a verification strategy defined and traceable coverage counters for downstream automation.
+
+---
+
+### **L4: Architecture / Microarchitecture**
+
+**Purpose:** Choose plausible structure before coding to guide decomposition.
+
+**Required fields:**
+
+- Block diagram: datapath, storage elements, FSMs
+- Clocking & CDC: single/multi-clock, crossing strategies
+- Resource strategy: FIFO/RAM sizes tied to performance goals
+- Latency/throughput budget mapped to L3 test scenarios
+- Assertions plan: which invariants are SVA vs. scoreboard
+
+**Artifacts:** Persist as `task_memory/specs/L4_architecture.json`, ensuring each block diagram element maps to a future DAG node with explicit parent/child dependencies, interface references, and tags for standard library reuse.
+
+**Gate:** User approves structure or explicitly defers (for simple designs). This becomes the initial DAG topology consumed by the Planner Agent; mismatches require regenerating the Design Context.
+
+---
+
+### **L5: Acceptance & Sign-off Plan**
+
+**Purpose:** Define “done” before implementation starts.
+
+**Required fields:**
+
+- Required artifacts: RTL, SVAs, testbenches, coverage reports, synthesis sanity checks
+- Target thresholds: test pass rate, coverage percentages (line/branch/FSM), functional coverpoints (reference the identifiers introduced in L3)
+- Known exclusions/assumptions: explicitly listed limitations
+- Synthesis target: FPGA/ASIC, tool (Yosys/Vivado/etc.)
+
+**Artifacts:** Store as `task_memory/specs/L5_acceptance.json`, including machine-readable thresholds so Orchestrator workers know when to advance nodes to `Passing`/`Frozen` (e.g., `line_coverage >= 0.9`, `dlq_count == 0`).
+
+**Gate:** Planner drafts defaults from L1-L4; user tightens/relaxes as needed. Acceptance metrics are the authoritative predicates for state transitions.
+
+---
+
 ### 3.0 System Architecture Overview
 
 The system is composed of four primary components: an Orchestrator, a Task Broker, a set of specialized Worker Pools, and a structured Data Store. To enhance resilience and isolate unrecoverable failures, the queuing subsystem includes a **Dead Letter Exchange (DLX)**, a **Dead Letter Queue (DLQ)**, and a **DLQ Monitor & Alerter**.

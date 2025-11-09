@@ -15,6 +15,7 @@ tests/
 │   ├── test_models.py       # Pydantic model tests
 │   ├── test_validation.py   # Validation and error handling tests
 │   ├── test_serialization.py # JSON serialization tests
+│   ├── test_specifications.py # L1–L5 specification schema tests
 │   └── README.md           # Schema testing documentation
 └── [other components]/      # Additional component tests (future)
 ```
@@ -77,7 +78,7 @@ This structure supports:
 
 ### ✅ Schema Tests (Complete)
 
-- **91 tests** covering all data contracts
+- **97 tests** covering all data contracts
 - **100% coverage** of schema validation
 - **Comprehensive validation** of enums, models, serialization
 - **Analysis pipeline support** with reflection agent and distillation process
