@@ -15,7 +15,7 @@ Deliver verified HDL from high-level intent with human control over decisive cho
 - **Planning Phase:** Human + Specification Helper Agent converge on L1–L5, then the Planner Agent emits a frozen Design Context/DAG.  
 - **Execution Phase:** The Orchestrator walks the DAG, enqueues tasks, workers execute, and results drive state transitions until acceptance criteria are met.
 
-> Ownership note: the demo planner stub currently lives under `orchestrator/planner_stub.py` to keep planning close to DAG/state management while the path stabilizes. It can be promoted to an agent runtime when the planning agent hardens.
+> Planning agent implementation will live alongside agent runtimes once ready; no demo planner stub is tracked in this branch.
 
 ## Read Next
 

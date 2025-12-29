@@ -6,9 +6,7 @@ LLM-driven agents + deterministic workers that take frozen hardware intent to ve
 
 - `apps/cli/` — CLI utilities (validation, reports)  
 - `core/schemas/` — shared message contracts; `core/observability/` defines structured events  
-- `orchestrator/` — control plane, state machine, task memory utils; planner stub kept here for now  
 - `agents/` — per-role agent runtimes (implementation, testbench, debug, reflection, spec helper)  
-- `workers/` — deterministic runtimes (lint, simulation, distillation)  
 - `adapters/llm/` — LLM provider integrations; `adapters/observability/agentops.py` sink placeholder  
 - `tests/core/schemas/`, `tests/infrastructure/` — contract and infrastructure suites  
 - `docs/` — architecture/process docs  
@@ -35,11 +33,6 @@ docker-compose ps           # verify
 - Groq: `LLM_PROVIDER=groq`, `GROQ_API_KEY`, optional `GROQ_MODEL` (e.g., `llama-3.1-8b-instant`).  
 - Spec Helper chat uses the same gateway; falls back to mock parsing when unset.
 
-### Planner stub templates
-
-- `PLANNER_TEMPLATE=counter4` → 4-bit counter with load/enable + default coverage goals.  
-- Unset → generic `demo_module` passthrough.
-
 ## Tests
 
 - Contracts: `pytest tests/core/schemas -q`  
@@ -47,7 +40,7 @@ docker-compose ps           # verify
 
 ## Documentation
 
-- `docs/overview.md` — planning/execution tour (planner stub lives in `orchestrator/` for now)  
+- `docs/overview.md` — planning/execution tour  
 - `docs/architecture.md` — runtime topology and queues  
 - `docs/agents.md` — agent roles  
 - `docs/spec-and-planning.md` — L1–L5 checklist; artifacts under `artifacts/task_memory/specs/`  

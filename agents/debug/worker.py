@@ -23,5 +23,5 @@ class DebugWorker(AgentWorkerBase):
             correlation_id=task.correlation_id,
             status=TaskStatus.SUCCESS,
             artifacts_path=None,
-            log_output="Debug analysis stub: no failures detected in demo.",
+            log_output="Debug analysis stub: no failures detected.",
         )

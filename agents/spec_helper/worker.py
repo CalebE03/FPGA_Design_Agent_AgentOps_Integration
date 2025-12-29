@@ -23,5 +23,5 @@ class SpecHelperWorker(AgentWorkerBase):
             correlation_id=task.correlation_id,
             status=TaskStatus.SUCCESS,
             artifacts_path=None,
-            log_output="SpecificationHelper stub: demo accepts provided interface.",
+            log_output="SpecificationHelper stub: accepted provided interface.",
         )
