@@ -17,12 +17,14 @@ def main():
     
     # Run tests with coverage
     cmd = [
-        sys.executable, "-m", "pytest", 
-        "tests/", 
-        "-v", 
-        "--cov=schemas", 
+        sys.executable,
+        "-m",
+        "pytest",
+        "tests/",
+        "-v",
+        "--cov=core.schemas",
         "--cov-report=term-missing",
-        "--cov-report=html:htmlcov"
+        "--cov-report=html:htmlcov",
     ]
     
     try:
@@ -41,6 +43,7 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+
 
 
 

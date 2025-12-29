@@ -123,7 +123,7 @@ pytest tests/infrastructure/ --cov=infrastructure --cov-report=term-missing
 
 ## Test Data
 
-Tests use the existing schema models from `schemas/contracts.py`:
+Tests use the existing schema models from `core/schemas/contracts.py`:
 
 - **`TaskMessage`** with various `EntityType` and `TaskPriority` values
 - **`ResultMessage`** with different `TaskStatus` outcomes

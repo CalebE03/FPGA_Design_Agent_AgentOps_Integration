@@ -16,7 +16,7 @@ This doc covers how tasks flow through RabbitMQ, how worker pools consume them, 
 2. **Dispatch:** The message is published to the appropriate queue (`agent_tasks`, `process_tasks`, or `simulation_tasks`).  
 3. **Consumption:** A worker in the matching pool acknowledges the message and executes. Agents and deterministic workers run independently; they never call each other directly.  
 4. **Result:** Worker publishes a `ResultMessage` to `results`, including artifacts/logs/metrics.  
-5. **State Update:** Orchestrator consumes `results`, updates artifact state, and may enqueue follow-on tasks (e.g., distill → reflect → debug).
+5. **State Update:** Orchestrator consumes `results`, updates artifact state, and may enqueue follow-on tasks (e.g., implementation → lint → **testbench** → simulation → distill → reflect).
 
 ## Poison Pills and DLX/DLQ
 

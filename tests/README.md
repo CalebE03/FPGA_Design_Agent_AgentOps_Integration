@@ -8,15 +8,16 @@ This directory contains comprehensive tests for the multi-agent hardware design 
 tests/
 ├── __init__.py              # Test package initialization
 ├── conftest.py              # Global pytest configuration and shared fixtures
-├── schemas/                 # Schema validation tests
-│   ├── __init__.py
-│   ├── conftest.py          # Schema-specific fixtures
-│   ├── test_enums.py        # Enum class tests
-│   ├── test_models.py       # Pydantic model tests
-│   ├── test_validation.py   # Validation and error handling tests
-│   ├── test_serialization.py # JSON serialization tests
-│   ├── test_specifications.py # L1–L5 specification schema tests
-│   └── README.md           # Schema testing documentation
+├── core/
+│   └── schemas/             # Schema validation tests
+│       ├── __init__.py
+│       ├── conftest.py      # Schema-specific fixtures
+│       ├── test_enums.py    # Enum class tests
+│       ├── test_models.py   # Pydantic model tests
+│       ├── test_validation.py   # Validation and error handling tests
+│       ├── test_serialization.py # JSON serialization tests
+│       ├── test_specifications.py # L1–L5 specification schema tests
+│       └── README.md        # Schema testing documentation
 └── [other components]/      # Additional component tests (future)
 ```
 
@@ -31,20 +32,20 @@ python3 -m pytest tests/ -v
 ### Run Schema Tests Only
 
 ```bash
-python3 -m pytest tests/schemas/ -v
+python3 -m pytest tests/core/schemas/ -v
 ```
 
 ### Run with Coverage
 
 ```bash
-python3 -m pytest tests/ --cov=schemas --cov-report=term-missing
+python3 -m pytest tests/ --cov=core.schemas --cov-report=term-missing
 ```
 
 ### Run Specific Component Tests
 
 ```bash
 # Schema tests
-python3 -m pytest tests/schemas/ -v
+python3 -m pytest tests/core/schemas/ -v
 
 # Future: Additional component tests
 python3 -m pytest tests/[component]/ -v
@@ -56,13 +57,13 @@ python3 -m pytest tests/[component]/ -v
 
 Each major system component has its own test directory:
 
-- **`schemas/`** - Data contract validation
+- **`core/schemas/`** - Data contract validation
 - **`[other components]/`** - Additional component tests as needed
 
 ### Shared vs Component-Specific
 
 - **Global fixtures** (`tests/conftest.py`) - System-wide test utilities
-- **Component fixtures** (`tests/schemas/conftest.py`) - Schema-specific test data
+- **Component fixtures** (`tests/core/schemas/conftest.py`) - Schema-specific test data
 - **Isolated testing** - Each component can be tested independently
 
 ### Scalability
@@ -99,7 +100,7 @@ This structure supports:
 
 ```bash
 # During schema development
-python3 -m pytest tests/schemas/ -v
+python3 -m pytest tests/core/schemas/ -v
 
 # During component development
 python3 -m pytest tests/[component]/ -v

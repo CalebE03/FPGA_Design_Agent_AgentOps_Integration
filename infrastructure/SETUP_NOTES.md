@@ -182,7 +182,7 @@ For production deployment:
 
 ## Schema Alignment
 
-The queue routing keys align perfectly with the `EntityType` enum in `schemas/contracts.py`:
+The queue routing keys align perfectly with the `EntityType` enum in `core/schemas/contracts.py`:
 
 - `EntityType.REASONING` → routing key "REASONING" → queue "agent_tasks"
 - `EntityType.LIGHT_DETERMINISTIC` → routing key "LIGHT_DETERMINISTIC" → queue "process_tasks"

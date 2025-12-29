@@ -1,6 +1,6 @@
 # Message Schemas & Controlled Vocabularies
 
-Shared schemas keep the Orchestrator, agents, and deterministic workers aligned. Full tables live in `schemas/SCHEMAS.md` and the source of truth models are in `schemas/contracts.py`.
+Shared schemas keep the Orchestrator, agents, and deterministic workers aligned. Full tables live in `core/schemas/SCHEMAS.md` and the source of truth models are in `core/schemas/contracts.py`.
 
 ## Core Models
 

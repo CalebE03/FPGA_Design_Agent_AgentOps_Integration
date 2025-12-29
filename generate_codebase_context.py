@@ -59,7 +59,7 @@ INCLUDE_EXTENSIONS = {
 
 # Architecture component mappings for annotations
 COMPONENT_MAPPINGS = {
-    'schemas/': {
+    'core/schemas/': {
         'component': 'DATA CONTRACTS & MESSAGE SCHEMAS',
         'architecture_section': '3.2 (Data Stores) & 7.0 (Schema Alignment)',
         'status': 'IMPLEMENTED ✅',
@@ -73,7 +73,7 @@ COMPONENT_MAPPINGS = {
         'description': 'RabbitMQ configuration with priority queues, dead letter exchange (DLX), and DLQ for fault tolerance.',
         'owners': ['Team'],
     },
-    'tests/schemas/': {
+    'tests/core/schemas/': {
         'component': 'SCHEMA VALIDATION & TESTING',
         'architecture_section': '7.0 (Schema Alignment)',
         'status': 'IMPLEMENTED ✅',
@@ -101,31 +101,31 @@ NOT_IMPLEMENTED = {
     'orchestrator/': {
         'component': 'ORCHESTRATOR',
         'architecture_section': '3.2 (Orchestrator)',
-        'status': 'NOT IMPLEMENTED ⚠️',
-        'description': 'Central brain for DAG state management, task scheduling, and result processing.',
+        'status': 'IMPLEMENTED ✅',
+        'description': 'Demo orchestrator driving DAG state transitions and task publication.',
     },
     'agents/': {
         'component': 'AGENT POOL',
         'architecture_section': '3.2 (Worker Pools) & Agent Definitions',
-        'status': 'NOT IMPLEMENTED ⚠️',
-        'description': 'LLM-based agents: Planner, Implementation, Testbench, Debug, Reflection, Specification Helper.',
+        'status': 'IMPLEMENTED ✅',
+        'description': 'LLM-based agents: Implementation, Testbench, Debug, Reflection, Specification Helper.',
     },
     'workers/': {
         'component': 'PROCESS & SIMULATION POOLS',
         'architecture_section': '3.2 (Worker Pools)',
-        'status': 'NOT IMPLEMENTED ⚠️',
-        'description': 'Deterministic workers: Linter, Simulator, Synthesizer, Distillation.',
+        'status': 'IMPLEMENTED ✅',
+        'description': 'Deterministic workers: Linter, Simulator, Distillation.',
     },
-    'design_context/': {
+    'artifacts/generated/': {
         'component': 'DESIGN CONTEXT STORAGE',
         'architecture_section': '3.2 (Data Stores)',
-        'status': 'NOT IMPLEMENTED ⚠️',
-        'description': 'Read-only store for frozen specifications, DAG, and interfaces.',
+        'status': 'IMPLEMENTED ✅',
+        'description': 'Frozen specifications, DAG, and generated RTL/testbench artifacts.',
     },
-    'task_memory/': {
+    'artifacts/task_memory/': {
         'component': 'TASK MEMORY',
         'architecture_section': '3.2 (Data Stores)',
-        'status': 'NOT IMPLEMENTED ⚠️',
+        'status': 'IN PROGRESS 🚧',
         'description': 'Per-task artifact storage: attempts, logs, distilled datasets, reflection outputs.',
     },
 }
@@ -316,7 +316,7 @@ def generate_context_file():
             file_groups['Schemas'].append(file_path)
         elif relative.startswith('infrastructure/'):
             file_groups['Infrastructure'].append(file_path)
-        elif relative.startswith('tests/schemas/'):
+        elif relative.startswith('tests/core/schemas/'):
             file_groups['Tests - Schemas'].append(file_path)
         elif relative.startswith('tests/infrastructure/'):
             file_groups['Tests - Infrastructure'].append(file_path)
@@ -399,4 +399,3 @@ if __name__ == "__main__":
     print(f"   Output: {output_file}")
     print(f"   Size: {file_size_kb:.1f} KB")
     print(f"\nYou can now upload this file to Google AI Studio for Gemini 2.5 Pro.")
-

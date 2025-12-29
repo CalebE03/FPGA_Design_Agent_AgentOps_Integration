@@ -52,7 +52,7 @@ The system uses a multi-queue architecture optimized for different task types:
 
 ## Schema Integration
 
-The queue routing keys align with `EntityType` enum values in `schemas/contracts.py`:
+The queue routing keys align with `EntityType` enum values in `core/schemas/contracts.py`:
 
 - `EntityType.REASONING` → routing key "REASONING" → queue "agent_tasks"
 - `EntityType.LIGHT_DETERMINISTIC` → routing key "LIGHT_DETERMINISTIC" → queue "process_tasks"
