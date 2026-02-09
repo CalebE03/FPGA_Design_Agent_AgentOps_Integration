@@ -9,8 +9,12 @@ Requirements:
 """
 
 import asyncio
-from adapters.llm.gateway import Message, MessageRole, GenerationConfig
-from adapters.llm.adapter_qwen34b import Qwen34BLocalGateway
+import pytest
+
+pytest.skip("Manual integration script; skip during automated test runs.", allow_module_level=True)
+
+from gateway import Message, MessageRole, GenerationConfig
+from adapter_qwen34b import Qwen34BLocalGateway
 
 
 async def main():
