@@ -1,26 +1,21 @@
-# Multi-Agent Hardware Design System: Overview
+# Overview
 
-The system accelerates the digital hardware design lifecycle by combining rigorous upfront planning with automated execution. A frozen design context enables agents and deterministic workers to operate in parallel without re-litigating requirements.
+This Project augments computer hardware engineer's workflow by using LLM-Based agents to assist in spec refinement and RTL Code generation, including testbenches. 
 
-## Vision
 
-Deliver verified HDL from high-level intent with human control over decisive choices while automating the repetitive work of generating, testing, and refining artifacts.
+## How it flows
+- **Plan** — Human + spec helper collect L1–L5, lock them, and the planner emits `design_context.json` + `dag.json`.
+- **Execute** — The orchestrator walks the DAG: Implementation → Lint → Testbench → TB lint → Simulation → Acceptance. On pass, the node is DONE. On sim failure, it runs Distill → Reflect → Debug and marks FAILED. If TB lint fails, it runs Debug and marks FAILED. In multi-module designs, only the top module runs TB/TB lint/SIM/Acceptance; submodules stop after lint. Each stage writes logs/artifact paths to task memory.
+- **Decide** — Coverage/results are reviewed; on failures you can use distill/reflect/debug outputs to iterate and re-run sim.
 
-## Core Principle
+## What’s in scope now
+- Local runs via CLI (LLM + toolchain required for end-to-end execution).
+- Agents for implementation/testbench/reflection/debug/spec-helper; workers for RTL lint, testbench lint, acceptance, sim, distill.
+- RabbitMQ queues with task memory persisted to disk.
 
-**Exhaustive upfront planning enables mechanical, parallel execution.** Once the specification and design graph are frozen, the system runs tasks independently across specialized workers.
-
-## Phases at a Glance
-
-- **Planning Phase:** Human + Specification Helper Agent converge on L1–L5, then the Planner Agent emits a frozen Design Context/DAG.  
-- **Execution Phase:** The Orchestrator walks the DAG, enqueues tasks, workers execute, and results drive state transitions until acceptance criteria are met.
-
-> Planning agent implementation will live alongside agent runtimes once ready; no demo planner stub is tracked in this branch.
-
-## Read Next
-
-- System architecture and runtime topology: [architecture.md](./architecture.md)  
-- Agent responsibilities and IO contracts: [agents.md](./agents.md)  
-- Specification and planning checklist (L1–L5): [spec-and-planning.md](./spec-and-planning.md)  
-- Queues, workers, DLQ/DLX details: [queues-and-workers.md](./queues-and-workers.md)  
-- Message schemas and controlled vocabularies: [schemas.md](./schemas.md)
+## Where to read next
+- Components and queues: [architecture.md](./architecture.md)
+- Agent IO (inputs/outputs per role): [agents.md](./agents.md)
+- CLI commands and examples: [cli.md](./cli.md)
+- Planning checklist and artifacts: [spec-and-planning.md](./spec-and-planning.md)
+- Queue/DLQ specifics: [queues-and-workers.md](./queues-and-workers.md)

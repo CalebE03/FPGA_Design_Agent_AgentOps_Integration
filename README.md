@@ -1,48 +1,93 @@
 # Multi-Agent Hardware Design System
 
-LLM-driven agents + deterministic workers that take frozen hardware intent to verified RTL/testbenches through a queued, state-machine-controlled flow. Planning (L1–L5) is frozen first; execution then runs mechanically.
+LLM-backed agents plus deterministic workers that turn a frozen hardware spec into RTL, testbenches, lint (RTL/TB), sim results, and analysis artifacts. Planning is frozen first; execution then runs mechanically through queues and a small state machine.
 
-## Runtime Layout
+## What works today
+- End-to-end pipeline via CLI (stubbed EDA path works without keys; LLM/tooling paths optional).
+- Agents for implementation, testbench, reflection, debug, spec-helper; workers for RTL lint, testbench lint, acceptance gating, simulation, distillation.
+- RabbitMQ-based orchestration with task memory under `artifacts/task_memory/` (CLI auto-purges per run).
+- Multi-module specs supported in a single input; full TB/sim runs for the top module only.
 
-- `apps/cli/` — CLI utilities (validation, reports)  
-- `core/schemas/` — shared message contracts; `core/observability/` defines structured events  
-- `agents/` — per-role agent runtimes (implementation, testbench, debug, reflection, spec helper)  
-- `adapters/llm/` — LLM provider integrations; `adapters/observability/agentops.py` sink placeholder  
-- `tests/core/schemas/`, `tests/infrastructure/` — contract and infrastructure suites  
-- `docs/` — architecture/process docs  
+## Quick start (containerized, recommended)
+Use the pinned Verilator toolchain (5.044) inside Docker for consistent results across machines. The container also includes Icarus (`iverilog`/`vvp`) for testbench lint and simulation.
 
-## Quick Start
+1) **Prereqs**
+   - Docker + Docker Compose
+   - Optional LLM: set `USE_LLM=1` and `OPENAI_API_KEY` (or Groq vars) in `.env`
+2) **Build and start services**
+   ```bash
+   make build
+   make up
+   ```
+3) **Install deps and run the CLI**
+   ```bash
+   make deps
+   make cli
+   ```
+   Artifacts land in `artifacts/generated/rtl/`; logs live in `artifacts/task_memory/<node>/<stage>/` (cleared at each CLI run).
+   `make deps` installs the OpenAI client extra required for LLM-backed agents.
+   The container sets `EDITOR=nano`; override by setting `EDITOR` in `.env` if you prefer another editor.
+   Inside Docker, `RABBITMQ_URL` must use the service host (`amqp://user:password@rabbitmq:5672/`).
 
-### Broker (RabbitMQ)
+## Host-only (not recommended)
+You can still run on the host, but tool versions may drift across machines.
 
 ```bash
-cd infrastructure
-docker-compose up -d        # start broker
-docker-compose ps           # verify
-# docker-compose down       # stop
+PYTHONPATH=. USE_LLM=1 python apps/cli/cli.py --timeout 120
 ```
 
-- UI: http://localhost:15672 (user/password)  
-- AMQP: amqp://user:password@localhost:5672/  
-- Queues: `agent_tasks`, `process_tasks`, `simulation_tasks`, `dead_letter_queue`
+## CLI usage
+- `make cli` — runs the pipeline inside the pinned toolchain container (sources `.env` if present; CLI also loads it)
+- `python apps/cli/cli.py` — host-only fallback (not recommended)
 
-### LLM configuration
+## Dev workflow helpers
+- `make shell` — open a shell in the running app container (sources `.env` if present)
+- `make test` — run pytest inside the container
+- `make logs` — tail RabbitMQ logs
+- `make down` — stop containers
 
-- Set `USE_LLM=1`.  
-- OpenAI: `LLM_PROVIDER=openai`, `OPENAI_API_KEY`, optional `OPENAI_MODEL` (defaults gpt-4.1-mini).  
-- Groq: `LLM_PROVIDER=groq`, `GROQ_API_KEY`, optional `GROQ_MODEL` (e.g., `llama-3.1-8b-instant`).  
-- Spec Helper chat uses the same gateway; falls back to mock parsing when unset.
+## Devcontainer (VS Code)
+Open the repo in a Dev Container to use the same pinned toolchain automatically. The config uses the `app` service in `infrastructure/docker-compose.yml`.
 
-## Tests
+## Repo map (you’ll touch these)
+- `apps/cli/` — main entrypoint
+- `orchestrator/` — state machine, planner, task memory, context builder
+- `agents/` — LLM-backed roles
+- `workers/` — deterministic RTL lint / testbench lint / acceptance gating / sim / distill
+- `core/schemas/` — contracts and enums
+- `adapters/llm/` — gateway to OpenAI/Groq
+- `infrastructure/` — RabbitMQ compose files
+- `artifacts/generated/` — design context + RTL/TB outputs
+- `artifacts/task_memory/` — per-stage logs and paths (cleared at each CLI run)
+- `artifacts/observability/` — per-run event logs (`*_events.jsonl`) and LLM cost summaries
+- `docs/` — deeper design notes
 
-- Contracts: `pytest tests/core/schemas -q`  
-- Infrastructure: `python run_infrastructure_tests.py` or `pytest tests/infrastructure -v`  
+## Environment knobs
+- Broker: `RABBITMQ_URL` (default `amqp://user:password@localhost:5672/`)
+- LLM: `USE_LLM`, `LLM_PROVIDER` (`openai`/`groq`), `OPENAI_MODEL` (default `gpt-4.1-mini`) or `GROQ_MODEL`
+- Tool overrides: `VERILATOR_PATH`, `IVERILOG_PATH`, `VVP_PATH`
+- Sim failure window: `SIM_FAIL_WINDOW_BEFORE`, `SIM_FAIL_WINDOW_AFTER` (cycles around detected failure)
 
-## Documentation
+## Testing
+- Unit/schema: `pytest tests/core/schemas -q`
+- Workers/planner smoke: `pytest tests/workers/test_* tests/core/test_planner.py`
 
-- `docs/overview.md` — planning/execution tour  
-- `docs/architecture.md` — runtime topology and queues  
-- `docs/agents.md` — agent roles  
-- `docs/spec-and-planning.md` — L1–L5 checklist; artifacts under `artifacts/task_memory/specs/`  
-- `docs/queues-and-workers.md` — broker/DLQ details  
-- `docs/schemas.md` + `core/schemas/SCHEMAS.md` — message contracts  
+<<<<<<< HEAD
+## Docs (start here)
+- `docs/overview.md` — how the system flows
+- `docs/architecture.md` — components and queues
+- `docs/agents.md` — role-by-role IO
+- `docs/cli.md` — command details
+- `docs/observability.md` — AgentOps setup and cost tracking
+- `docs/spec-and-planning.md` — L1–L5 checklist and artifacts
+- `docs/queues-and-workers.md` — broker layout and DLQ notes
+=======
+## Docs (start here)
+- `docs/overview.md` — how the system flows
+- `docs/architecture.md` — components and queues
+- `docs/agents.md` — role-by-role IO
+- `docs/cli.md` — command details
+- `docs/observability.md` — AgentOps setup and cost tracking
+- `docs/spec-and-planning.md` — L1–L5 checklist and artifacts
+- `docs/queues-and-workers.md` — broker layout and DLQ notes
+>>>>>>> 8653a13 (Add Verilog-Eval dataset and processed prompts)

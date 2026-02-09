@@ -1,41 +1,39 @@
-# Multi-Agent Hardware Design System: System Architecture
+# Architecture
 
-## Introduction
+Short map of the moving pieces. For the story, start with [overview.md](./overview.md); for agent IO see [agents.md](./agents.md).
 
-This architecture enables a two-phase flow—planning then execution—to produce verified HDL from a frozen design context. A human-supervised planning gate removes ambiguity up front; the execution phase then fans out tasks across agents and deterministic workers. For a gentle primer see [overview.md](./overview.md); for agent-level behavior see [agents.md](./agents.md).
+## Components
+- **Orchestrator** — reads `design_context.json` + `dag.json`, walks the DAG, publishes tasks, consumes results, advances state, and writes task memory.
+- **RabbitMQ** — queues for agents (`agent_tasks`), deterministic work (`process_tasks`), simulations (`simulation_tasks`), results (`results`), and DLQ.
+- **Agents (LLM-backed)** — spec-helper, planner, implementation, testbench, reflection, debug.
+- **Workers (deterministic)** — RTL lint, testbench lint, acceptance gating, simulation, distillation.
+- **Storage** — `artifacts/generated/` (design context + RTL/TB), `artifacts/task_memory/` (logs, artifact paths, insights; CLI auto-purges per run), and `artifacts/observability/` (per-run event logs and cost summaries).
 
-## Logical Components
+## Execution path (per node)
+`PENDING → IMPLEMENTING → LINTING → TESTBENCHING → TB_LINTING → SIMULATING → ACCEPTING → DONE` (on pass).
 
-- **Orchestrator:** Owns the Design Context/DAG and artifact state machine; discovers ready work, publishes tasks, consumes results, and advances states. It does not execute tasks directly.  
-- **Task Broker (RabbitMQ):** Durable message bus that decouples scheduling from execution. Provides queues for agent tasks, deterministic/process tasks, simulation tasks, a results queue, and DLX/DLQ routing. See [queues-and-workers.md](./queues-and-workers.md) for queue semantics.  
-- **Agent Pool (LLM Agents):** Logical roles for Specification Helper, Planner, Implementation, Testbench, Reflection, and Debug. All run behind a single agent-worker runtime; behavior is detailed in [agents.md](./agents.md).  
-- **Process/Simulation Pools (Deterministic Workers):** Deterministic executors for linting, compilation, distillation, and simulation. These use external toolchains and do not perform LLM reasoning.  
-- **Data Stores:**  
-  - **Design Context (read-only):** Frozen specification, interfaces, and DAG emitted after planning.  
-  - **Task Memory (writeable):** Per-task artifacts (attempts, logs, distilled datasets, reflections, metrics) that enable retries and analysis.
+On sim failure, the orchestrator runs an analysis+patch loop and re-verifies (bounded retries): `SIMULATING → DISTILLING → REFLECTING → DEBUGGING → (LINTING and/or TB_LINTING) → SIMULATING ... → (ACCEPTING → DONE | FAILED)`.
 
-## Runtime & Deployment Topology
+If testbench lint fails, the orchestrator runs `DEBUGGING` and then retries verification (bounded retries). If acceptance gating fails, the node is marked FAILED and dependents are blocked.
 
-The system is deployed as cooperating runtimes wired through RabbitMQ:
+For multi-module runs, only the top module executes TB/SIM; submodules stop after lint and are marked DONE. The orchestrator enqueues the next task only when the prior stage returns `SUCCESS`. Distill/reflect run only after sim failures.
 
-- **CLI runtime:** Thin client a user operates locally or in its own container; communicates with the Orchestrator/queues via HTTP/gRPC or broker APIs.  
-- **Agent-worker runtime:** A generic service that hosts all LLM-based agents; agents are selected by `AgentType` on each task. Scale by adding replicas of this service.  
-- **Deterministic-workers runtime:** Worker pool(s) for lint, compile, simulate, and distill tasks that run external toolchains.  
-- **RabbitMQ runtime (Task Broker):** Dedicated broker instance providing `agent_tasks`, `process_tasks`, `simulation_tasks`, `results`, and DLQ routing.  
-- **Data/Storage services:** Backing stores for Design Context and Task Memory as required by the deployment.
+## Queue routing (defaults)
+- `REASONING` → `agent_tasks`
+- `LIGHT_DETERMINISTIC` → `process_tasks`
+- `HEAVY_DETERMINISTIC` → `simulation_tasks`
+- All completions → `results`
+- Rejections (`requeue=false`) → DLQ via DLX
 
-For single-user local mode these appear as separate services in one `docker-compose.yml` (optional `cli` service plus `agent-worker`, `deterministic-workers`, `rabbitmq`, and storage).
+See [queues-and-workers.md](./queues-and-workers.md) for more on DLQ expectations.
 
-Agents never call each other directly; all work is mediated by the Orchestrator and brokered queues. Scaling is achieved by adding worker replicas rather than minting per-agent microservices.
+## Planner inputs/outputs
+- Inputs: locked L1–L5 specs in `artifacts/task_memory/specs/`
+- Outputs: `artifacts/generated/design_context.json` and `dag.json` with module interfaces/paths and DAG nodes
+- Paths in the design context are treated as targets; agents/workers write to them, orchestrator reads them.
 
-## Phase Workflow (Planning vs Execution)
-
-- **Planning Phase:** Human + Specification Helper Agent converge on the L1–L5 checklist, producing a frozen specification. The Planner Agent consumes it to emit the Design Context/DAG and frozen interfaces. Details live in [spec-and-planning.md](./spec-and-planning.md) and [agents.md](./agents.md).  
-- **Execution Phase:** The Orchestrator scans the DAG for ready nodes, publishes tasks to the broker, workers execute, and results update state. Testing/analysis loops (distill → reflect → debug) ride the same queues; see [queues-and-workers.md](./queues-and-workers.md) for the lifecycle. The process repeats until acceptance criteria are met.
-
-## Error Handling & Escalation (High-Level)
-
-- Broker DLX/DLQ isolate poison-pill tasks without blocking healthy traffic.  
-- Workers validate messages against schemas before running; unrecoverable failures are rejected to the DLQ.  
-- Human escalation is triggered when retries stall or DLQ alerts fire; the Orchestrator packages context from Task Memory to speed triage.  
-See [queues-and-workers.md](./queues-and-workers.md) for DLQ mechanics and [schemas.md](./schemas.md) for message invariants.
+## Config highlights
+- Broker URL: `RABBITMQ_URL`
+- LLM: `USE_LLM`, `LLM_PROVIDER`, model/env keys
+- Tool overrides: `VERILATOR_PATH`, `IVERILOG_PATH`, `VVP_PATH`
+- Timeouts are set in the runtimes (see code) and can be tuned per worker if needed.
